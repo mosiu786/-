@@ -1,14 +1,151 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fa">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Snake Game</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<title>بازی کلیک سریع با عکس دوستان و Leaderboard</title>
+<style>
+  body { font-family: Tahoma, sans-serif; text-align:center; background:#f0f0f0; }
+  #gameArea { width:300px; height:300px; margin:20px auto; border:2px solid #333; position:relative; background:#fff; overflow:hidden; }
+  .target { width:50px; height:50px; border-radius:50%; position:absolute; cursor:pointer; background-size:cover; background-position:center; border:2px solid #fff; transition: transform 0.3s, opacity 0.3s; }
+  #scoreBoard { font-size:20px; margin-top:10px; }
+  #startBtn { padding:10px 20px; margin:10px auto; display:block; }
+  #leaderboard { margin-top:20px; }
+  table { margin:0 auto; border-collapse:collapse; width:300px; }
+  th, td { border:1px solid #333; padding:5px; text-align:center; }
+  a { cursor:pointer; color:#007BFF; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+</style>
 </head>
 <body>
-    <h1>Snake Game</h1>
-    <canvas id="gameCanvas" width="400" height="400"></canvas>
-    <script src="script.js"></script>
+
+<h2>بازی کلیک سریع</h2>
+<div id="gameArea"></div>
+<div id="scoreBoard">امتیاز: 0</div>
+<button id="startBtn">شروع بازی</button>
+
+<h3>Leaderboard</h3>
+<div id="leaderboard">
+  <table>
+    <thead>
+      <tr><th>رتبه</th><th>نام</th><th>امتیاز</th></tr>
+    </thead>
+    <tbody id="leaderboardBody"></tbody>
+  </table>
+</div>
+
+<script>
+let score = 0;
+let timeLeft = 10;
+let timer;
+let leaderboard = [];
+let playerName = '';
+
+// ===== لینک عکس دوستانت اینجا قرار بده =====
+const friendsImages = [
+  'LINK_FRIEND1_HERE',
+  'LINK_FRIEND2_HERE',
+  'LINK_FRIEND3_HERE'
+];
+
+// حرکت تصادفی اهداف
+function randomPosition() {
+  const gameArea = document.getElementById('gameArea');
+  const maxX = gameArea.clientWidth - 50;
+  const maxY = gameArea.clientHeight - 50;
+  return { x: Math.floor(Math.random() * maxX), y: Math.floor(Math.random() * maxY) };
+}
+
+function createTarget() {
+  const target = document.createElement('div');
+  target.className = 'target';
+  
+  const imgUrl = friendsImages[Math.floor(Math.random()*friendsImages.length)];
+  target.style.backgroundImage = `url(${imgUrl})`;
+  
+  const pos = randomPosition();
+  target.style.left = pos.x + 'px';
+  target.style.top = pos.y + 'px';
+  
+  // حرکت تصادفی آرام
+  const dx = (Math.random()*2-1)*2;
+  const dy = (Math.random()*2-1)*2;
+  const moveInterval = setInterval(()=>{
+    let x = target.offsetLeft + dx;
+    let y = target.offsetTop + dy;
+    if(x<0 || x>250) x = target.offsetLeft - dx;
+    if(y<0 || y>250) y = target.offsetTop - dy;
+    target.style.left = x + 'px';
+    target.style.top = y + 'px';
+  }, 30);
+  
+  target.onclick = () => {
+    score++;
+    document.getElementById('scoreBoard').innerText = 'امتیاز: ' + score;
+    
+    if(navigator.vibrate) navigator.vibrate(100);
+    
+    target.style.transform = 'scale(0) rotate(30deg)';
+    target.style.opacity = '0';
+    
+    setTimeout(()=>{
+      clearInterval(moveInterval);
+      target.remove();
+      createTarget();
+    },300);
+  };
+  
+  document.getElementById('gameArea').appendChild(target);
+}
+
+function updateLeaderboard() {
+  leaderboard.sort((a,b)=>b.score-a.score);
+  const tbody = document.getElementById('leaderboardBody');
+  tbody.innerHTML = '';
+  leaderboard.slice(0,5).forEach((item,i)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${i+1}</td>
+                    <td><a onclick="openProfile('${item.name}')">${item.name}</a></td>
+                    <td>${item.score}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// لینک پروفایل شما
+function openProfile(name){
+  const profileURL = "https://www.facebook.com/mosiu786";
+  window.open(profileURL, "_blank");
+}
+
+function startGame() {
+  playerName = prompt("لطفاً نام خود را وارد کنید:");
+  if(!playerName || playerName.trim() === ''){
+    alert("نام معتبر وارد نکردید! بازی شروع نمی‌شود.");
+    return;
+  }
+
+  score = 0;
+  document.getElementById('scoreBoard').innerText = 'امتیاز: ' + score;
+  document.getElementById('gameArea').innerHTML = '';
+  createTarget();
+
+  timeLeft = 10;
+  clearInterval(timer);
+  timer = setInterval(() => {
+    timeLeft--;
+    if(timeLeft<=0){
+      clearInterval(timer);
+
+      alert(`خسته نباشی ${playerName} عزیز\nبه گروه بی نقاب خوش اومدی 🤗\nبرای فهمیدن رتبه به این آیدی Mus Lim پیام بده`);
+
+      leaderboard.push({name: playerName, score: score});
+      updateLeaderboard();
+      document.getElementById('gameArea').innerHTML = '';
+    }
+  },1000);
+}
+
+document.getElementById('startBtn').addEventListener('click', startGame);
+</script>
+
 </body>
 </html>
